@@ -1,0 +1,24 @@
+storage "raft" {
+  path    = "/openbao/file"
+  node_id = "node1"
+}
+
+listener "tcp" {
+  address     = "0.0.0.0:8200"
+  tls_disable = true
+}
+
+seal "pkcs11" {
+  lib             = "/usr/local/lib/softhsm/libsofthsm2.so"
+  token_label     = "OpenBao"
+  pin             = "1234"
+  key_label       = "bao-unseal-key"
+  hmac_key_label  = "bao-hmac-key"
+  generate_key    = "true"
+  mechanism       = "CKM_RSA_PKCS_KEY_PAIR_GEN"
+}
+
+disable_mlock = true
+api_addr      = "http://0.0.0.0:8200"
+cluster_addr  = "http://0.0.0.0:8201"
+ui            = true

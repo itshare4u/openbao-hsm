@@ -1,0 +1,25 @@
+# Data directories
+/data/
+/logs/
+/softhsm/tokens/*
+!/softhsm/tokens/.gitkeep
+
+# Config files with secrets
+config/*.hcl
+!config/openbao.hcl.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.log
+*.pid

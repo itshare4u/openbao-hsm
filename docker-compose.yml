@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  openbao:
+    image: ghcr.io/itshare4u/openbao-hsm:latest
+    container_name: openbao-hsm
+    hostname: openbao
+    ports:
+      - "8200:8200"
+      - "8201:8201"
+    environment:
+      - BAO_ADDR=http://127.0.0.1:8200
+      - BAO_SEAL_TYPE=pkcs11
+      - BAO_HSM_LIB=/usr/local/lib/softhsm/libsofthsm2.so
+      - BAO_HSM_TOKEN_LABEL=OpenBao
+      - BAO_HSM_PIN=1234
+      - BAO_HSM_KEY_LABEL=bao-unseal-key
+      - BAO_HSM_HMAC_KEY_LABEL=bao-hmac-key
+      - BAO_HSM_GENERATE_KEY=true
+      - SOFTHSM2_CONF=/etc/softhsm/softhsm2.conf
+    volumes:
+      - ./config:/openbao/config
+      - ./data:/openbao/file
+      - ./logs:/openbao/logs
+      - ./softhsm/tokens:/var/lib/softhsm/tokens
+    cap_add:
+      - IPC_LOCK
+    command: server -config=/openbao/config/openbao.hcl
+    restart: unless-stopped
+    networks:
+      - openbao-network
+
+networks:
+  openbao-network:
+    driver: bridge
