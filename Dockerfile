@@ -53,14 +53,11 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     set -eux; \
     GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
-      go install github.com/openbao/openbao-plugins/secrets/aws@${OPENBAO_PLUGINS_VERSION}; \
-    mv /out/aws /out/openbao-plugin-secrets-aws; \
+      go install github.com/openbao/openbao-plugins/secrets/aws/cmd/openbao-plugin-secrets-aws@${OPENBAO_PLUGINS_VERSION}; \
     GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
-      go install github.com/openbao/openbao-plugins/secrets/gcp@${OPENBAO_PLUGINS_VERSION}; \
-    mv /out/gcp /out/openbao-plugin-secrets-gcp; \
+      go install github.com/openbao/openbao-plugins/secrets/gcp/cmd/openbao-plugin-secrets-gcp@${OPENBAO_PLUGINS_VERSION}; \
     GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
-      go install github.com/openbao/openbao-plugins/secrets/azure@${OPENBAO_PLUGINS_VERSION}; \
-    mv /out/azure /out/openbao-plugin-secrets-azure
+      go install github.com/openbao/openbao-plugins/secrets/azure/cmd/openbao-plugin-secrets-azure@${OPENBAO_PLUGINS_VERSION}
 
 # Create production image
 FROM ghcr.io/openbao/openbao-hsm-ubi:latest
