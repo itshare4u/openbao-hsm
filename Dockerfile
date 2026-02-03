@@ -47,32 +47,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /src
 
-RUN if git clone --depth 1 --branch ${VAULT_PLUGIN_AWS_REF} https://github.com/hashicorp/vault-plugin-secrets-aws.git aws; then \
-        cd aws; \
+RUN set -eu; \
+    rm -rf aws; \
+    if git clone --depth 1 --branch "${VAULT_PLUGIN_AWS_REF}" https://github.com/hashicorp/vault-plugin-secrets-aws.git aws; then :; \
     else \
         echo "WARN: ref ${VAULT_PLUGIN_AWS_REF} not found, cloning default branch"; \
+        rm -rf aws; \
         git clone --depth 1 https://github.com/hashicorp/vault-plugin-secrets-aws.git aws; \
-        cd aws; \
-    fi \
-    && (go build -o /out/vault-plugin-secrets-aws ./cmd/vault-plugin-secrets-aws || go build -o /out/vault-plugin-secrets-aws ./)
+    fi; \
+    cd aws; \
+    (go build -o /out/vault-plugin-secrets-aws ./cmd/vault-plugin-secrets-aws || go build -o /out/vault-plugin-secrets-aws ./)
 
-RUN if git clone --depth 1 --branch ${VAULT_PLUGIN_GCP_REF} https://github.com/hashicorp/vault-plugin-secrets-gcp.git gcp; then \
-        cd gcp; \
+RUN set -eu; \
+    rm -rf gcp; \
+    if git clone --depth 1 --branch "${VAULT_PLUGIN_GCP_REF}" https://github.com/hashicorp/vault-plugin-secrets-gcp.git gcp; then :; \
     else \
         echo "WARN: ref ${VAULT_PLUGIN_GCP_REF} not found, cloning default branch"; \
+        rm -rf gcp; \
         git clone --depth 1 https://github.com/hashicorp/vault-plugin-secrets-gcp.git gcp; \
-        cd gcp; \
-    fi \
-    && (go build -o /out/vault-plugin-secrets-gcp ./cmd/vault-plugin-secrets-gcp || go build -o /out/vault-plugin-secrets-gcp ./)
+    fi; \
+    cd gcp; \
+    (go build -o /out/vault-plugin-secrets-gcp ./cmd/vault-plugin-secrets-gcp || go build -o /out/vault-plugin-secrets-gcp ./)
 
-RUN if git clone --depth 1 --branch ${VAULT_PLUGIN_AZURE_REF} https://github.com/hashicorp/vault-plugin-secrets-azure.git azure; then \
-        cd azure; \
+RUN set -eu; \
+    rm -rf azure; \
+    if git clone --depth 1 --branch "${VAULT_PLUGIN_AZURE_REF}" https://github.com/hashicorp/vault-plugin-secrets-azure.git azure; then :; \
     else \
         echo "WARN: ref ${VAULT_PLUGIN_AZURE_REF} not found, cloning default branch"; \
+        rm -rf azure; \
         git clone --depth 1 https://github.com/hashicorp/vault-plugin-secrets-azure.git azure; \
-        cd azure; \
-    fi \
-    && (go build -o /out/vault-plugin-secrets-azure ./cmd/vault-plugin-secrets-azure || go build -o /out/vault-plugin-secrets-azure ./)
+    fi; \
+    cd azure; \
+    (go build -o /out/vault-plugin-secrets-azure ./cmd/vault-plugin-secrets-azure || go build -o /out/vault-plugin-secrets-azure ./)
 
 # Create production image
 FROM ghcr.io/openbao/openbao-hsm-ubi:latest
