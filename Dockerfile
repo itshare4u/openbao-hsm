@@ -47,16 +47,31 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /src
 
-RUN git clone --depth 1 --branch ${VAULT_PLUGIN_AWS_REF} https://github.com/hashicorp/vault-plugin-secrets-aws.git aws \
-    && cd aws \
+RUN if git clone --depth 1 --branch ${VAULT_PLUGIN_AWS_REF} https://github.com/hashicorp/vault-plugin-secrets-aws.git aws; then \
+        cd aws; \
+    else \
+        echo "WARN: ref ${VAULT_PLUGIN_AWS_REF} not found, cloning default branch"; \
+        git clone --depth 1 https://github.com/hashicorp/vault-plugin-secrets-aws.git aws; \
+        cd aws; \
+    fi \
     && (go build -o /out/vault-plugin-secrets-aws ./cmd/vault-plugin-secrets-aws || go build -o /out/vault-plugin-secrets-aws ./)
 
-RUN git clone --depth 1 --branch ${VAULT_PLUGIN_GCP_REF} https://github.com/hashicorp/vault-plugin-secrets-gcp.git gcp \
-    && cd gcp \
+RUN if git clone --depth 1 --branch ${VAULT_PLUGIN_GCP_REF} https://github.com/hashicorp/vault-plugin-secrets-gcp.git gcp; then \
+        cd gcp; \
+    else \
+        echo "WARN: ref ${VAULT_PLUGIN_GCP_REF} not found, cloning default branch"; \
+        git clone --depth 1 https://github.com/hashicorp/vault-plugin-secrets-gcp.git gcp; \
+        cd gcp; \
+    fi \
     && (go build -o /out/vault-plugin-secrets-gcp ./cmd/vault-plugin-secrets-gcp || go build -o /out/vault-plugin-secrets-gcp ./)
 
-RUN git clone --depth 1 --branch ${VAULT_PLUGIN_AZURE_REF} https://github.com/hashicorp/vault-plugin-secrets-azure.git azure \
-    && cd azure \
+RUN if git clone --depth 1 --branch ${VAULT_PLUGIN_AZURE_REF} https://github.com/hashicorp/vault-plugin-secrets-azure.git azure; then \
+        cd azure; \
+    else \
+        echo "WARN: ref ${VAULT_PLUGIN_AZURE_REF} not found, cloning default branch"; \
+        git clone --depth 1 https://github.com/hashicorp/vault-plugin-secrets-azure.git azure; \
+        cd azure; \
+    fi \
     && (go build -o /out/vault-plugin-secrets-azure ./cmd/vault-plugin-secrets-azure || go build -o /out/vault-plugin-secrets-azure ./)
 
 # Create production image
