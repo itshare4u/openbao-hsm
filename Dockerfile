@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1.6
+
 # OpenBao with SoftHSM2 Support
 # Based on openbao-hsm-ubi with added SoftHSM2 for testing
 
@@ -33,52 +35,35 @@ RUN autoreconf -fi && \
     make install
 
 # Build external secrets engine plugins (aws/gcp/azure)
-FROM golang:1.22 AS plugin-builder
+# Build on $BUILDPLATFORM and cross-compile for $TARGETPLATFORM (no QEMU needed).
+FROM --platform=$BUILDPLATFORM golang:1.24 AS plugin-builder
 
-ARG VAULT_PLUGIN_AWS_REF=main
-ARG VAULT_PLUGIN_GCP_REF=main
-ARG VAULT_PLUGIN_AZURE_REF=main
+ARG TARGETOS
+ARG TARGETARCH
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    git \
-    ca-certificates \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+ARG VAULT_PLUGIN_AWS_VERSION=latest
+ARG VAULT_PLUGIN_GCP_VERSION=latest
+ARG VAULT_PLUGIN_AZURE_VERSION=latest
 
-WORKDIR /src
+ENV CGO_ENABLED=0
+ENV GOPROXY=https://proxy.golang.org,direct
 
-RUN set -eu; \
-    rm -rf aws; \
-    if git clone --depth 1 --branch "${VAULT_PLUGIN_AWS_REF}" https://github.com/hashicorp/vault-plugin-secrets-aws.git aws; then :; \
-    else \
-        echo "WARN: ref ${VAULT_PLUGIN_AWS_REF} not found, cloning default branch"; \
-        rm -rf aws; \
-        git clone --depth 1 https://github.com/hashicorp/vault-plugin-secrets-aws.git aws; \
-    fi; \
-    cd aws; \
-    (go build -o /out/vault-plugin-secrets-aws ./cmd/vault-plugin-secrets-aws || go build -o /out/vault-plugin-secrets-aws ./)
+RUN mkdir -p /out
 
-RUN set -eu; \
-    rm -rf gcp; \
-    if git clone --depth 1 --branch "${VAULT_PLUGIN_GCP_REF}" https://github.com/hashicorp/vault-plugin-secrets-gcp.git gcp; then :; \
-    else \
-        echo "WARN: ref ${VAULT_PLUGIN_GCP_REF} not found, cloning default branch"; \
-        rm -rf gcp; \
-        git clone --depth 1 https://github.com/hashicorp/vault-plugin-secrets-gcp.git gcp; \
-    fi; \
-    cd gcp; \
-    (go build -o /out/vault-plugin-secrets-gcp ./cmd/vault-plugin-secrets-gcp || go build -o /out/vault-plugin-secrets-gcp ./)
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go install github.com/hashicorp/vault-plugin-secrets-aws/cmd/vault-plugin-secrets-aws@${VAULT_PLUGIN_AWS_VERSION}
 
-RUN set -eu; \
-    rm -rf azure; \
-    if git clone --depth 1 --branch "${VAULT_PLUGIN_AZURE_REF}" https://github.com/hashicorp/vault-plugin-secrets-azure.git azure; then :; \
-    else \
-        echo "WARN: ref ${VAULT_PLUGIN_AZURE_REF} not found, cloning default branch"; \
-        rm -rf azure; \
-        git clone --depth 1 https://github.com/hashicorp/vault-plugin-secrets-azure.git azure; \
-    fi; \
-    cd azure; \
-    (go build -o /out/vault-plugin-secrets-azure ./cmd/vault-plugin-secrets-azure || go build -o /out/vault-plugin-secrets-azure ./)
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go install github.com/hashicorp/vault-plugin-secrets-gcp/cmd/vault-plugin-secrets-gcp@${VAULT_PLUGIN_GCP_VERSION}
+
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    GOBIN=/out GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go install github.com/hashicorp/vault-plugin-secrets-azure/cmd/vault-plugin-secrets-azure@${VAULT_PLUGIN_AZURE_VERSION}
 
 # Create production image
 FROM ghcr.io/openbao/openbao-hsm-ubi:latest
