@@ -14,9 +14,13 @@ services:
       - BAO_HSM_LIB=/usr/local/lib/softhsm/libsofthsm2.so
       - BAO_HSM_TOKEN_LABEL=OpenBao
       - BAO_HSM_PIN=1234
+      - BAO_HSM_SO_PIN=1234
+      - BAO_HSM_RSA_BITS=3072
       - BAO_HSM_KEY_LABEL=bao-unseal-key
       - BAO_HSM_HMAC_KEY_LABEL=bao-hmac-key
       - BAO_HSM_GENERATE_KEY=true
+      - BAO_PLUGIN_AUTO_REGISTER=true
+      - BAO_ROOT_TOKEN=${BAO_ROOT_TOKEN:-}
       - SOFTHSM2_CONF=/etc/softhsm/softhsm2.conf
     volumes:
       - ./config:/openbao/config

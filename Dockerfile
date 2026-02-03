@@ -32,6 +32,33 @@ RUN autoreconf -fi && \
     make -j$(nproc) && \
     make install
 
+# Build external secrets engine plugins (aws/gcp/azure)
+FROM golang:1.22 AS plugin-builder
+
+ARG VAULT_PLUGIN_AWS_REF=main
+ARG VAULT_PLUGIN_GCP_REF=main
+ARG VAULT_PLUGIN_AZURE_REF=main
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    ca-certificates \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+
+RUN git clone --depth 1 --branch ${VAULT_PLUGIN_AWS_REF} https://github.com/hashicorp/vault-plugin-secrets-aws.git aws \
+    && cd aws \
+    && (go build -o /out/vault-plugin-secrets-aws ./cmd/vault-plugin-secrets-aws || go build -o /out/vault-plugin-secrets-aws ./)
+
+RUN git clone --depth 1 --branch ${VAULT_PLUGIN_GCP_REF} https://github.com/hashicorp/vault-plugin-secrets-gcp.git gcp \
+    && cd gcp \
+    && (go build -o /out/vault-plugin-secrets-gcp ./cmd/vault-plugin-secrets-gcp || go build -o /out/vault-plugin-secrets-gcp ./)
+
+RUN git clone --depth 1 --branch ${VAULT_PLUGIN_AZURE_REF} https://github.com/hashicorp/vault-plugin-secrets-azure.git azure \
+    && cd azure \
+    && (go build -o /out/vault-plugin-secrets-azure ./cmd/vault-plugin-secrets-azure || go build -o /out/vault-plugin-secrets-azure ./)
+
 # Create production image
 FROM ghcr.io/openbao/openbao-hsm-ubi:latest
 
@@ -40,6 +67,7 @@ USER root
 # Install runtime dependencies
 RUN microdnf install -y \
     openssl \
+    gnutls-utils \
     libstdc++ \
     && microdnf clean all \
     && rm -rf /var/cache/yum
@@ -54,7 +82,8 @@ COPY --from=builder /usr/local/var/lib/softhsm/ /usr/local/var/lib/softhsm/
 # Create necessary directories
 RUN mkdir -p /var/lib/softhsm/tokens \
     /etc/softhsm \
-    /usr/local/var/lib/softhsm/tokens
+    /usr/local/var/lib/softhsm/tokens \
+    /usr/local/lib/openbao/plugins
 
 # Set up SoftHSM2 configuration
 RUN echo "directories.tokendir = /var/lib/softhsm/tokens" > /etc/softhsm/softhsm2.conf \
@@ -68,6 +97,7 @@ RUN echo "directories.tokendir = /var/lib/softhsm/tokens" > /etc/softhsm/softhsm
 # Set environment variables for SoftHSM2
 ENV SOFTHSM2_CONF=/etc/softhsm/softhsm2.conf
 ENV PKCS11_LIB=/usr/local/lib/softhsm/libsofthsm2.so
+ENV OPENBAO_PLUGIN_DIR=/usr/local/lib/openbao/plugins
 
 # Update library path
 RUN echo "/usr/local/lib/softhsm" > /etc/ld.so.conf.d/softhsm.conf && ldconfig
@@ -76,6 +106,16 @@ RUN echo "/usr/local/lib/softhsm" > /etc/ld.so.conf.d/softhsm.conf && ldconfig
 RUN chown -R openbao:openbao /var/lib/softhsm \
     && chmod 755 /var/lib/softhsm \
     && chmod 755 /usr/local/lib/softhsm/libsofthsm2.so
+
+# Copy external plugins
+COPY --from=plugin-builder /out/vault-plugin-secrets-aws /usr/local/lib/openbao/plugins/
+COPY --from=plugin-builder /out/vault-plugin-secrets-gcp /usr/local/lib/openbao/plugins/
+COPY --from=plugin-builder /out/vault-plugin-secrets-azure /usr/local/lib/openbao/plugins/
+
+# Add entrypoint wrapper for SoftHSM key bootstrap
+COPY docker-entrypoint.sh /usr/local/bin/openbao-entrypoint.sh
+RUN chmod +x /usr/local/bin/openbao-entrypoint.sh \
+    && chown -R openbao:openbao /usr/local/lib/openbao/plugins
 
 # Add metadata labels
 LABEL org.opencontainers.image.title="OpenBao with SoftHSM2" \
@@ -88,5 +128,6 @@ LABEL org.opencontainers.image.title="OpenBao with SoftHSM2" \
 # Switch back to openbao user
 USER openbao
 
-# Default command
+# Default entrypoint + command
+ENTRYPOINT ["/usr/local/bin/openbao-entrypoint.sh"]
 CMD ["server", "-dev", "-dev-no-store-token"]

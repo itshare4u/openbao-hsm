@@ -8,12 +8,15 @@ listener "tcp" {
   tls_disable = true
 }
 
+plugin_directory = "/usr/local/lib/openbao/plugins"
+
 seal "pkcs11" {
   lib             = "/usr/local/lib/softhsm/libsofthsm2.so"
   token_label     = "OpenBao"
   pin             = "1234"
   key_label       = "bao-unseal-key"
   hmac_key_label  = "bao-hmac-key"
+  rsa_oaep_hash   = "sha1"
   generate_key    = "true"
   mechanism       = "CKM_RSA_PKCS_KEY_PAIR_GEN"
 }
