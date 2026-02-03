@@ -67,25 +67,25 @@ RUN --mount=type=cache,target=/go/pkg/mod \
       if [ ! -x "/out/${want}" ] && [ -x "/out/$1" ]; then mv "/out/$1" "/out/${want}"; fi; \
     }; \
     build_plugin openbao-plugin-secrets-aws \
+      github.com/openbao/openbao-plugins/secrets/aws \
+      github.com/openbao/openbao-plugins/plugins/secrets/aws \
       github.com/openbao/openbao-plugins/cmd/openbao-plugin-secrets-aws \
       github.com/openbao/openbao-plugins/plugins/secrets/aws/cmd/openbao-plugin-secrets-aws \
-      github.com/openbao/openbao-plugins/secrets/aws/cmd/openbao-plugin-secrets-aws \
-      github.com/openbao/openbao-plugins/plugins/secrets/aws \
-      github.com/openbao/openbao-plugins/secrets/aws; \
+      github.com/openbao/openbao-plugins/secrets/aws/cmd/openbao-plugin-secrets-aws; \
     ensure_name aws openbao-plugin-secrets-aws; \
     build_plugin openbao-plugin-secrets-gcp \
+      github.com/openbao/openbao-plugins/secrets/gcp \
+      github.com/openbao/openbao-plugins/plugins/secrets/gcp \
       github.com/openbao/openbao-plugins/cmd/openbao-plugin-secrets-gcp \
       github.com/openbao/openbao-plugins/plugins/secrets/gcp/cmd/openbao-plugin-secrets-gcp \
-      github.com/openbao/openbao-plugins/secrets/gcp/cmd/openbao-plugin-secrets-gcp \
-      github.com/openbao/openbao-plugins/plugins/secrets/gcp \
-      github.com/openbao/openbao-plugins/secrets/gcp; \
+      github.com/openbao/openbao-plugins/secrets/gcp/cmd/openbao-plugin-secrets-gcp; \
     ensure_name gcp openbao-plugin-secrets-gcp; \
     build_plugin openbao-plugin-secrets-azure \
+      github.com/openbao/openbao-plugins/secrets/azure \
+      github.com/openbao/openbao-plugins/plugins/secrets/azure \
       github.com/openbao/openbao-plugins/cmd/openbao-plugin-secrets-azure \
       github.com/openbao/openbao-plugins/plugins/secrets/azure/cmd/openbao-plugin-secrets-azure \
-      github.com/openbao/openbao-plugins/secrets/azure/cmd/openbao-plugin-secrets-azure \
-      github.com/openbao/openbao-plugins/plugins/secrets/azure \
-      github.com/openbao/openbao-plugins/secrets/azure; \
+      github.com/openbao/openbao-plugins/secrets/azure/cmd/openbao-plugin-secrets-azure; \
     ensure_name azure openbao-plugin-secrets-azure
 
 # Create production image
